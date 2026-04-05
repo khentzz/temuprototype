@@ -203,8 +203,6 @@ function Home({setScreen,setSelectedProduct}) {
           <span style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',fontSize:16}}>📷</span>
         </div>
       </div>
-
-      {/* Flash Deals */}
       <div style={{background:'linear-gradient(90deg,#1a56db,#0ea5e9)',margin:12,borderRadius:16,padding:'12px 14px'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
           <div><div style={{color:'#fff',fontWeight:800,fontSize:16}}>⚡ Flash Deals</div><div style={{color:'#bfdbfe',fontSize:12}}>Ends in</div></div>
@@ -221,8 +219,6 @@ function Home({setScreen,setSelectedProduct}) {
           ))}
         </div>
       </div>
-
-      {/* Categories */}
       <div style={{padding:'0 12px 4px'}}>
         <div style={{fontWeight:700,fontSize:15,marginBottom:10,color:'#111'}}>Categories</div>
         <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}}>
@@ -234,8 +230,6 @@ function Home({setScreen,setSelectedProduct}) {
           ))}
         </div>
       </div>
-
-      {/* Today's Deals */}
       <div style={{padding:'12px 12px 4px'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
           <div style={{fontWeight:700,fontSize:15,color:'#111'}}>🔥 Today's Deals</div>
@@ -255,8 +249,6 @@ function Home({setScreen,setSelectedProduct}) {
           ))}
         </div>
       </div>
-
-      {/* Free Shipping Banner */}
       <div style={{margin:'12px 12px',borderRadius:14,padding:'12px 16px',background:'linear-gradient(90deg,#eff6ff,#e0f2fe)',border:'1.5px solid #bfdbfe',display:'flex',alignItems:'center',gap:10}}>
         <span style={{fontSize:28}}>🚀</span>
         <div>
@@ -264,8 +256,6 @@ function Home({setScreen,setSelectedProduct}) {
           <div style={{fontSize:12,color:'#6b7280'}}>No minimum spend required today!</div>
         </div>
       </div>
-
-      {/* Product Grid */}
       <div style={{padding:'0 12px'}}>
         <div style={{fontWeight:700,fontSize:15,color:'#111',marginBottom:10}}>All Products</div>
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
@@ -609,7 +599,7 @@ function OrderTracking({setScreen}) {
       <div style={{margin:'16px 16px 0',background:'#fff',borderRadius:14,padding:'16px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
         <div style={{fontWeight:700,fontSize:14,color:'#111',marginBottom:16}}>Shipment Status</div>
         {steps.map((step,i)=>{
-          const isDone=i<=ACTIVE;const isActive=i===ACTIVE;
+          const isDone=i<=ACTIVE; const isActive=i===ACTIVE;
           return (
             <div key={i} style={{display:'flex',gap:14,position:'relative'}}>
               {i<steps.length-1&&<div style={{position:'absolute',left:17,top:36,width:2,height:40,background:i<ACTIVE?'#1a56db':'#e5e7eb',zIndex:0}}/>}
