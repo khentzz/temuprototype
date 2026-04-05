@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Skyro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:#e8edf5;display:flex;justify-content:center;min-height:100vh;}
+#root{width:375px;min-height:100vh;background:#fff;position:relative;overflow-x:hidden;box-shadow:0 0 40px rgba(0,0,0,0.18);}
+::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+// ── MOCK DATA ──────────────────────────────────────────────
+const products = [
+  {id:1,name:'AirPods Pro 2nd Gen',price:1299,original:1999,discount:35,image:'https://placehold.co/300x300/dbeafe/1a56db?text=AirPods',category:'Electronics',colors:['White'],sizes:[],rating:4.8,reviews:2341,sold:5200},
+  {id:2,name:'Slim Fit Polo Shirt',price:349,original:599,discount:42,image:'https://placehold.co/300x300/dbeafe/1a56db?text=Polo',category:'Fashion',colors:['Navy','White','Sky Blue'],sizes:['S','M','L','XL'],rating:4.6,reviews:891,sold:3100},
+  {id:3,name:'Smart LED Desk Lamp',price:599,original:899,discount:33,image:'https://placehold.co/300x300/dbeafe/1a56db?text=Lamp',category:'Home',colors:['White','Black'],sizes:[],rating:4.7,reviews:654,sold:1800},
+  {id:4,name:'Vitamin C Serum 30ml',price:299,original:499,discount:40,image:'https://placehold.co/300x300/dbeafe/1a56db?text=Serum',category:'Beauty',colors:[],sizes:[],rating:4.9,reviews:3210,sold:9800},
+  {id:5,name:'Mechanical Keyboard RGB',price:1899,original:2999,discount:37,image:'https://placehold.co/300x300/dbeafe/1a56db?text=Keyboard',category:'Electronics',colors:['Black','White'],sizes:[],rating:4.7,reviews:1120,sold:2400},
+  {id:6,name:'Yoga Mat Premium',price:449,original:699,discount:36,image:'https://placehold.co/300x300/dbeafe/1a56db?text=Yoga+Mat',category:'Sports',colors:['Purple','Blue','Pink'],sizes:[],rating:4.5,reviews:780,sold:4200},
+  {id:7,name:'Wireless Charger 15W',price:399,original:699,discount:43,image:'https://placehold.co/300x300/dbeafe/1a56db?text=Charger',category:'Electronics',colors:['Black','White'],sizes:[],rating:4.6,reviews:445,sold:6700},
+  {id:8,name:'Linen Throw Pillow Set',price:249,original:399,discount:38,image:'https://placehold.co/300x300/dbeafe/1a56db?text=Pillows',category:'Home',colors:['Beige','Gray','Blue'],sizes:[],rating:4.4,reviews:320,sold:1500},
+];
+const flashDeals = [
+  {id:1,name:'TWS Earbuds',price:199,original:599,discount:67,image:'https://placehold.co/120x120/1a56db/ffffff?text=TWS'},
+  {id:2,name:'Phone Stand',price:89,original:199,discount:55,image:'https://placehold.co/120x120/1a56db/ffffff?text=Stand'},
+  {id:3,name:'USB-C Hub',price:349,original:799,discount:56,image:'https://placehold.co/120x120/1a56db/ffffff?text=Hub'},
+  {id:4,name:'Screen Protector',price:49,original:129,discount:62,image:'https://placehold.co/120x120/1a56db/ffffff?text=Screen'},
+];
+const categories = [
+  {id:1,name:'Electronics',icon:'💻'},{id:2,name:'Fashion',icon:'👗'},
+  {id:3,name:'Home',icon:'🏠'},{id:4,name:'Beauty',icon:'✨'},
+  {id:5,name:'Sports',icon:'⚽'},{id:6,name:'Toys',icon:'🧸'},
+  {id:7,name:'Books',icon:'📚'},{id:8,name:'Food',icon:'🍜'},
+];
+const mockReviews = [
+  {id:1,user:'Maria S.',rating:5,comment:'Super fast delivery and exactly as described. Love it!',date:'Mar 28, 2026'},
+  {id:2,user:'Jake R.',rating:4,comment:'Great quality for the price. Would buy again.',date:'Mar 25, 2026'},
+  {id:3,user:'Ana L.',rating:5,comment:'Skyro never disappoints. Packaging was perfect too.',date:'Mar 20, 2026'},
+];
+const savedAddresses = [
+  {id:1,name:'Home',fullName:'Alex Rivera',phone:'+63 912 345 6789',line:'123 Sunrise St, Brgy. Skyview',city:'Quezon City',zip:'1100',region:'NCR'},
+  {id:2,name:'Office',fullName:'Alex Rivera',phone:'+63 917 000 1234',line:'8F Sky Tower, Ayala Ave',city:'Makati City',zip:'1226',region:'NCR'},
+];
+
+// ── CART CONTEXT ───────────────────────────────────────────
+const CartContext = React.createContext();
+function CartProvider({children}) {
+  const [cartItems, setCartItems] = React.useState([]);
+  const [order, setOrder] = React.useState(null);
+  const addToCart = (product, qty=1, color='', size='') => {
+    setCartItems(prev => {
+      const key = `${product.id}-${color}-${size}`;
+      const ex = prev.find(i => i.key===key);
+      if(ex) return prev.map(i => i.key===key ? {...i,qty:i.qty+qty} : i);
+      return [...prev, {...product,qty,color,size,key,checked:true}];
+    });
+  };
+  const updateQty = (key,delta) => setCartItems(prev=>prev.map(i=>i.key===key?{...i,qty:Math.max(1,i.qty+delta)}:i));
+  const removeItem = (key) => setCartItems(prev=>prev.filter(i=>i.key!==key));
+  const toggleCheck = (key) => setCartItems(prev=>prev.map(i=>i.key===key?{...i,checked:!i.checked}:i));
+  const cartCount = cartItems.reduce((s,i)=>s+i.qty,0);
+  const checkedItems = cartItems.filter(i=>i.checked);
+  const subtotal = checkedItems.reduce((s,i)=>s+i.price*i.qty,0);
+  const totalSaved = checkedItems.reduce((s,i)=>s+(i.original-i.price)*i.qty,0);
+  return (
+    <CartContext.Provider value={{cartItems,addToCart,updateQty,removeItem,toggleCheck,cartCount,subtotal,totalSaved,order,setOrder}}>
+      {children}
+    </CartContext.Provider>
+  );
+}
+const useCart = () => React.useContext(CartContext);
+
+// ── LOGO ───────────────────────────────────────────────────
+function SkyroLogo({size='md',light=false}) {
+  const sizes={sm:{text:20,icon:14},md:{text:30,icon:18},lg:{text:40,icon:24}};
+  const s=sizes[size];
+  const color=light?'#fff':'#1a56db';
+  const accent=light?'#93c5fd':'#38bdf8';
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:6}}>
+      <svg width={s.icon+8} height={s.icon+8} viewBox="0 0 32 32" fill="none">
+        <path d="M16 28 C8 20,4 14,8 8 C12 2,24 2,26 10 C28 16,22 20,16 28Z" fill={color} opacity="0.15"/>
+        <path d="M16 26 L8 14 L13 16 L16 6 L19 16 L24 14 Z" fill={color}/>
+        <circle cx="16" cy="6" r="3" fill={accent}/>
+      </svg>
+      <span style={{fontSize:s.text,fontWeight:900,color,letterSpacing:'-1px'}}>
+        Sky<span style={{color:accent}}>ro</span>
+      </span>
+    </div>
+  );
+}
+
+// ── FLASH TIMER ────────────────────────────────────────────
+function FlashDealTimer() {
+  const [secs,setSecs] = React.useState(7243);
+  React.useEffect(()=>{
+    const t=setInterval(()=>setSecs(s=>Math.max(0,s-1)),1000);
+    return ()=>clearInterval(t);
+  },[]);
+  const h=String(Math.floor(secs/3600)).padStart(2,'0');
+  const m=String(Math.floor((secs%3600)/60)).padStart(2,'0');
+  const s=String(secs%60).padStart(2,'0');
+  const Block=({v})=>(
+    <span style={{background:'#1a1a2e',color:'#fff',borderRadius:6,padding:'3px 7px',fontWeight:800,fontSize:14,fontFamily:'monospace'}}>{v}</span>
+  );
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:4}}>
+      <Block v={h}/><span style={{color:'#fff',fontWeight:800}}>:</span>
+      <Block v={m}/><span style={{color:'#fff',fontWeight:800}}>:</span>
+      <Block v={s}/>
+    </div>
+  );
+}
+
+// ── BOTTOM NAV ─────────────────────────────────────────────
+function BottomNav({screen,setScreen}) {
+  const {cartCount}=useCart();
+  const tabs=[{id:'home',label:'Home',icon:'🏠'},{id:'categories',label:'Categories',icon:'☰'},{id:'cart',label:'Cart',icon:'🛒'},{id:'messages',label:'Messages',icon:'💬'},{id:'profile',label:'Profile',icon:'👤'}];
+  return (
+    <nav style={{position:'fixed',bottom:0,width:375,background:'#fff',borderTop:'1px solid #e5e7eb',display:'flex',zIndex:100,boxShadow:'0 -2px 12px rgba(0,0,0,0.08)'}}>
+      {tabs.map(t=>(
+        <button key={t.id} onClick={()=>setScreen(t.id)} style={{flex:1,padding:'8px 0 10px',border:'none',background:'none',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,color:screen===t.id?'#1a56db':'#9ca3af',position:'relative'}}>
+          <span style={{fontSize:20}}>{t.icon}</span>
+          <span style={{fontSize:10,fontWeight:screen===t.id?700:500}}>{t.label}</span>
+          {t.id==='cart'&&cartCount>0&&<span style={{position:'absolute',top:4,right:'50%',transform:'translateX(8px)',background:'#ef4444',color:'#fff',borderRadius:99,fontSize:9,fontWeight:700,padding:'1px 5px'}}>{cartCount}</span>}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
+// ── SIGN IN ────────────────────────────────────────────────
+function SignIn({setScreen}) {
+  const [email,setEmail]=React.useState('');
+  const [pw,setPw]=React.useState('');
+  const inp={width:'100%',padding:'14px 16px',borderRadius:12,border:'1.5px solid #e5e7eb',fontSize:15,outline:'none',fontFamily:'Inter,sans-serif',color:'#111'};
+  const social=(label,emoji)=>(
+    <button style={{width:'100%',padding:'13px',borderRadius:12,border:'1.5px solid #e5e7eb',background:'#fff',fontSize:14,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,color:'#374151'}}>
+      <span>{emoji}</span> Continue with {label}
+    </button>
+  );
+  return (
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column'}}>
+      <div style={{background:'linear-gradient(135deg,#1a56db 0%,#1e40af 60%,#0ea5e9 100%)',padding:'60px 24px 40px',textAlign:'center'}}>
+        <SkyroLogo size="lg" light/>
+        <p style={{color:'#bfdbfe',marginTop:10,fontSize:14}}>Deals that take you higher ✈️</p>
+      </div>
+      <div style={{flex:1,padding:'32px 24px 0',display:'flex',flexDirection:'column',gap:14}}>
+        <div>
+          <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>Email</label>
+          <input style={inp} type="email" placeholder="you@email.com" value={email} onChange={e=>setEmail(e.target.value)}/>
+        </div>
+        <div>
+          <label style={{fontSize:13,fontWeight:600,color:'#374151',display:'block',marginBottom:6}}>Password</label>
+          <input style={inp} type="password" placeholder="••••••••" value={pw} onChange={e=>setPw(e.target.value)}/>
+        </div>
+        <div style={{textAlign:'right'}}><span style={{fontSize:13,color:'#1a56db',fontWeight:600,cursor:'pointer'}}>Forgot password?</span></div>
+        <button onClick={()=>setScreen('home')} style={{width:'100%',padding:'15px',borderRadius:12,border:'none',background:'linear-gradient(90deg,#1a56db,#0ea5e9)',color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',boxShadow:'0 4px 16px rgba(26,86,219,0.35)'}}>Sign In</button>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          <div style={{flex:1,height:1,background:'#e5e7eb'}}/><span style={{fontSize:13,color:'#9ca3af'}}>or</span><div style={{flex:1,height:1,background:'#e5e7eb'}}/>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+          {social('Google','🔵')}{social('Facebook','🔷')}{social('Apple','🍎')}
+        </div>
+        <p style={{textAlign:'center',fontSize:14,color:'#6b7280',marginTop:8,paddingBottom:32}}>
+          New to Skyro? <span style={{color:'#1a56db',fontWeight:700,cursor:'pointer'}}>Join now</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ── HOME ───────────────────────────────────────────────────
+function Home({setScreen,setSelectedProduct}) {
+  const [search,setSearch]=React.useState('');
+  const {cartCount}=useCart();
+  const filtered=products.filter(p=>p.name.toLowerCase().includes(search.toLowerCase()));
+  return (
+    <div style={{paddingBottom:70}}>
+      <div style={{background:'linear-gradient(135deg,#1a56db 0%,#1e40af 70%,#0ea5e9 100%)',padding:'16px 16px 20px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+          <SkyroLogo size="sm" light/>
+          <div style={{display:'flex',gap:10}}>
+            <button style={{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:10,width:36,height:36,cursor:'pointer',fontSize:16}}>🔔</button>
+            <button onClick={()=>setScreen('cart')} style={{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:10,width:36,height:36,cursor:'pointer',fontSize:16,position:'relative'}}>
+              🛒{cartCount>0&&<span style={{position:'absolute',top:-4,right:-4,background:'#ef4444',color:'#fff',borderRadius:99,fontSize:9,fontWeight:700,padding:'1px 4px'}}>{cartCount}</span>}
+            </button>
+          </div>
+        </div>
+        <div style={{position:'relative'}}>
+          <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',fontSize:16}}>🔍</span>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search deals on Skyro..." style={{width:'100%',padding:'11px 44px 11px 38px',borderRadius:12,border:'none',fontSize:14,background:'#fff',outline:'none',fontFamily:'Inter,sans-serif'}}/>
+          <span style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',fontSize:16}}>📷</span>
+        </div>
+      </div>
+      <div style={{background:'linear-gradient(90deg,#1a56db,#0ea5e9)',margin:12,borderRadius:16,padding:'12px 14px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <div><div style={{color:'#fff',fontWeight:800,fontSize:16}}>⚡ Flash Deals</div><div style={{color:'#bfdbfe',fontSize:12}}>Ends in</div></div>
+          <FlashDealTimer/>
+        </div>
+        <div style={{display:'flex',gap:10,overflowX:'auto',paddingBottom:4}}>
+          {flashDeals.map(d=>(
+            <div key={d.id} style={{background:'#fff',borderRadius:12,padding:8,minWidth:90,textAlign:'center',flexShrink:0}}>
+              <img src={d.image} alt={d.name} style={{width:60,height:60,borderRadius:8,objectFit:'cover'}}/>
+              <div style={{fontSize:11,fontWeight:700,color:'#111',marginTop:4}}>₱{d.price}</div>
+              <div style={{fontSize:10,color:'#9ca3af',textDecoration:'line-through'}}>₱{d.original}</div>
+              <div style={{background:'#ef4444',color:'#fff',borderRadius:6,fontSize:10,fontWeight:700,padding:'1px 5px',marginTop:2}}>-{d.discount}%</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{padding:'0 12px 4px'}}>
+        <div style={{fontWeight:700,fontSize:15,marginBottom:10,color:'#111'}}>Categories</div>
+        <div style={{display:'flex',gap:8,overflowX:'auto',paddingBottom:4}}>
+          {categories.map(c=>(
+            <div key={c.id} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,minWidth:60,cursor:'pointer'}}>
+              <div style={{width:52,height:52,borderRadius:14,background:'#eff6ff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,border:'1.5px solid #dbeafe'}}>{c.icon}</div>
+              <span style={{fontSize:10,fontWeight:600,color:'#374151',textAlign:'center'}}>{c.name}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{padding:'12px 12px 4px'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+          <div style={{fontWeight:700,fontSize:15,color:'#111'}}>🔥 Today's Deals</div>
+          <span style={{fontSize:12,color:'#1a56db',fontWeight:600,cursor:'pointer'}}>See all</span>
+        </div>
+        <div style={{display:'flex',gap:10,overflowX:'auto',paddingBottom:4}}>
+          {products.slice(0,5).map(p=>(
+            <div key={p.id} onClick={()=>{setSelectedProduct(p);setScreen('product');}} style={{minWidth:130,background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,0.08)',cursor:'pointer',flexShrink:0}}>
+              <img src={p.image} alt={p.name} style={{width:'100%',height:100,objectFit:'cover'}}/>
+              <div style={{padding:'8px 8px 10px'}}>
+                <div style={{fontSize:12,fontWeight:700,color:'#111',marginBottom:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{p.name}</div>
+                <div style={{fontSize:14,fontWeight:800,color:'#1a56db'}}>₱{p.price}</div>
+                <div style={{fontSize:11,color:'#9ca3af',textDecoration:'line-through'}}>₱{p.original}</div>
+                <div style={{background:'#ef4444',color:'#fff',borderRadius:6,fontSize:10,fontWeight:700,padding:'1px 5px',display:'inline-block',marginTop:2}}>-{p.discount}%</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{margin:'12px 12px',borderRadius:14,padding:'12px 16px',background:'linear-gradient(90deg,#eff6ff,#e0f2fe)',border:'1.5px solid #bfdbfe',display:'flex',alignItems:'center',gap:10}}>
+        <span style={{fontSize:28}}>🚀</span>
+        <div>
+          <div style={{fontWeight:800,fontSize:14,color:'#1a56db'}}>Free Shipping on All Orders</div>
+          <div style={{fontSize:12,color:'#6b7280'}}>No minimum spend required today!</div>
+        </div>
+      </div>
+      <div style={{padding:'0 12px'}}>
+        <div style={{fontWeight:700,fontSize:15,color:'#111',marginBottom:10}}>All Products</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          {filtered.map(p=>(
+            <div key={p.id} onClick={()=>{setSelectedProduct(p);setScreen('product');}} style={{background:'#fff',borderRadius:14,overflow:'hidden',boxShadow:'0 2px 8px rgba(0,0,0,0.08)',cursor:'pointer'}}>
+              <div style={{position:'relative'}}>
+                <img src={p.image} alt={p.name} style={{width:'100%',height:130,objectFit:'cover'}}/>
+                <span style={{position:'absolute',top:8,left:8,background:'#ef4444',color:'#fff',borderRadius:8,fontSize:11,fontWeight:800,padding:'2px 7px'}}>-{p.discount}%</span>
+              </div>
+              <div style={{padding:'8px 10px 12px'}}>
+                <div style={{fontSize:12,color:'#374151',marginBottom:4,lineHeight:1.3}}>{p.name}</div>
+                <div style={{fontSize:16,fontWeight:800,color:'#1a56db'}}>₱{p.price}</div>
+                <div style={{fontSize:11,color:'#9ca3af',textDecoration:'line-through'}}>₱{p.original}</div>
+                <div style={{fontSize:10,color:'#6b7280',marginTop:4}}>⭐ {p.rating} · {p.sold.toLocaleString()} sold</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── PRODUCT DETAIL ─────────────────────────────────────────
+function ProductDetail({product,setScreen}) {
+  const [selColor,setSelColor]=React.useState(product.colors[0]||'');
+  const [selSize,setSelSize]=React.useState(product.sizes[0]||'');
+  const [qty,setQty]=React.useState(1);
+  const [imgIdx,setImgIdx]=React.useState(0);
+  const {addToCart}=useCart();
+  const savings=product.original-product.price;
+  const savePct=Math.round((savings/product.original)*100);
+  const imgs=[product.image,product.image,product.image];
+  return (
+    <div style={{paddingBottom:90}}>
+      <div style={{padding:'14px 16px',display:'flex',alignItems:'center',gap:10,borderBottom:'1px solid #f3f4f6'}}>
+        <button onClick={()=>setScreen('home')} style={{background:'#f3f4f6',border:'none',borderRadius:10,width:36,height:36,cursor:'pointer',fontSize:18}}>←</button>
+        <span style={{fontWeight:700,fontSize:15,color:'#111'}}>Product Details</span>
+      </div>
+      <div style={{position:'relative',background:'#f8fafc'}}>
+        <img src={imgs[imgIdx]} alt={product.name} style={{width:'100%',height:280,objectFit:'cover'}}/>
+        <div style={{position:'absolute',bottom:10,left:'50%',transform:'translateX(-50%)',display:'flex',gap:6}}>
+          {imgs.map((_,i)=><div key={i} onClick={()=>setImgIdx(i)} style={{width:i===imgIdx?20:8,height:8,borderRadius:4,background:i===imgIdx?'#1a56db':'#cbd5e1',cursor:'pointer',transition:'width 0.2s'}}/>)}
+        </div>
+        <span style={{position:'absolute',top:12,left:12,background:'#ef4444',color:'#fff',borderRadius:8,fontSize:12,fontWeight:800,padding:'3px 9px'}}>-{savePct}% OFF</span>
+      </div>
+      <div style={{padding:'16px 16px 0'}}>
+        <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:4}}>
+          <span style={{fontSize:28,fontWeight:900,color:'#1a56db'}}>₱{product.price}</span>
+          <span style={{fontSize:16,color:'#9ca3af',textDecoration:'line-through'}}>₱{product.original}</span>
+        </div>
+        <div style={{background:'#eff6ff',borderRadius:8,padding:'4px 10px',display:'inline-block',marginBottom:8}}>
+          <span style={{fontSize:12,fontWeight:700,color:'#1a56db'}}>You save ₱{savings}</span>
+        </div>
+        <div style={{fontSize:15,fontWeight:700,color:'#111',marginBottom:4}}>{product.name}</div>
+        <div style={{fontSize:13,color:'#6b7280',marginBottom:8}}>⭐ {product.rating} ({product.reviews.toLocaleString()} reviews) · {product.sold.toLocaleString()} sold</div>
+        <div style={{background:'#f0fdf4',borderRadius:10,padding:'10px 12px',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
+          <span style={{fontSize:18}}>🚚</span>
+          <div><div style={{fontSize:12,fontWeight:700,color:'#166534'}}>Free Shipping</div><div style={{fontSize:11,color:'#6b7280'}}>Estimated delivery: Apr 8–10, 2026</div></div>
+        </div>
+        {product.colors.length>0&&(
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:8}}>Color: <span style={{color:'#1a56db'}}>{selColor}</span></div>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              {product.colors.map(c=><button key={c} onClick={()=>setSelColor(c)} style={{padding:'6px 14px',borderRadius:20,border:`2px solid ${selColor===c?'#1a56db':'#e5e7eb'}`,background:selColor===c?'#eff6ff':'#fff',fontSize:13,fontWeight:600,color:selColor===c?'#1a56db':'#374151',cursor:'pointer'}}>{c}</button>)}
+            </div>
+          </div>
+        )}
+        {product.sizes.length>0&&(
+          <div style={{marginBottom:14}}>
+            <div style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:8}}>Size: <span style={{color:'#1a56db'}}>{selSize}</span></div>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              {product.sizes.map(s=><button key={s} onClick={()=>setSelSize(s)} style={{width:44,height:44,borderRadius:10,border:`2px solid ${selSize===s?'#1a56db':'#e5e7eb'}`,background:selSize===s?'#eff6ff':'#fff',fontSize:13,fontWeight:700,color:selSize===s?'#1a56db':'#374151',cursor:'pointer'}}>{s}</button>)}
+            </div>
+          </div>
+        )}
+        <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:20}}>
+          <span style={{fontSize:13,fontWeight:700,color:'#374151'}}>Quantity</span>
+          <div style={{display:'flex',alignItems:'center',border:'1.5px solid #e5e7eb',borderRadius:10,overflow:'hidden'}}>
+            <button onClick={()=>setQty(q=>Math.max(1,q-1))} style={{width:36,height:36,border:'none',background:'#f9fafb',fontSize:18,cursor:'pointer',fontWeight:700}}>−</button>
+            <span style={{width:40,textAlign:'center',fontWeight:700,fontSize:15}}>{qty}</span>
+            <button onClick={()=>setQty(q=>q+1)} style={{width:36,height:36,border:'none',background:'#f9fafb',fontSize:18,cursor:'pointer',fontWeight:700}}>+</button>
+          </div>
+        </div>
+        <div style={{borderTop:'1px solid #f3f4f6',paddingTop:16,marginBottom:16}}>
+          <div style={{fontWeight:700,fontSize:15,color:'#111',marginBottom:12}}>Reviews ({product.reviews.toLocaleString()})</div>
+          {mockReviews.map(r=>(
+            <div key={r.id} style={{marginBottom:14,paddingBottom:14,borderBottom:'1px solid #f3f4f6'}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:4}}>
+                <span style={{fontWeight:700,fontSize:13,color:'#111'}}>{r.user}</span>
+                <span style={{fontSize:11,color:'#9ca3af'}}>{r.date}</span>
+              </div>
+              <div style={{fontSize:13,marginBottom:4}}>{'⭐'.repeat(r.rating)}</div>
+              <div style={{fontSize:13,color:'#374151'}}>{r.comment}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{position:'fixed',bottom:0,width:375,background:'#fff',padding:'12px 16px',borderTop:'1px solid #f3f4f6',display:'flex',gap:10,boxShadow:'0 -4px 16px rgba(0,0,0,0.08)'}}>
+        <button onClick={()=>{addToCart(product,qty,selColor,selSize);setScreen('cart');}} style={{flex:1,padding:'14px',borderRadius:12,border:'2px solid #1a56db',background:'#fff',color:'#1a56db',fontSize:14,fontWeight:800,cursor:'pointer'}}>ADD TO CART</button>
+        <button onClick={()=>{addToCart(product,qty,selColor,selSize);setScreen('address');}} style={{flex:1,padding:'14px',borderRadius:12,border:'none',background:'linear-gradient(90deg,#1a56db,#0ea5e9)',color:'#fff',fontSize:14,fontWeight:800,cursor:'pointer',boxShadow:'0 4px 14px rgba(26,86,219,0.35)'}}>BUY NOW</button>
+      </div>
+    </div>
+  );
+}
+
+// ── CART ───────────────────────────────────────────────────
+function Cart({setScreen}) {
+  const {cartItems,updateQty,removeItem,toggleCheck,subtotal,totalSaved}=useCart();
+  const checkedItems=cartItems.filter(i=>i.checked);
+  const total=subtotal;
+  const remaining=Math.max(0,1500-subtotal);
+  const progress=Math.min(100,(subtotal/1500)*100);
+  return (
+    <div style={{paddingBottom:80}}>
+      <div style={{background:'linear-gradient(135deg,#1a56db,#0ea5e9)',padding:'16px 16px 18px',display:'flex',alignItems:'center',gap:12}}>
+        <button onClick={()=>setScreen('home')} style={{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:10,width:36,height:36,cursor:'pointer',fontSize:18,color:'#fff'}}>←</button>
+        <span style={{fontWeight:800,fontSize:17,color:'#fff'}}>My Cart</span>
+        <span style={{fontSize:13,color:'#bfdbfe',marginLeft:4}}>({cartItems.length} items)</span>
+      </div>
+      {cartItems.length===0?(
+        <div style={{textAlign:'center',padding:'60px 24px'}}>
+          <div style={{fontSize:60,marginBottom:16}}>🛒</div>
+          <div style={{fontWeight:700,fontSize:18,color:'#111',marginBottom:8}}>Your cart is empty</div>
+          <div style={{fontSize:14,color:'#6b7280',marginBottom:24}}>Discover amazing deals on Skyro</div>
+          <button onClick={()=>setScreen('home')} style={{padding:'13px 32px',borderRadius:12,border:'none',background:'linear-gradient(90deg,#1a56db,#0ea5e9)',color:'#fff',fontSize:15,fontWeight:700,cursor:'pointer'}}>Shop Now</button>
+        </div>
+      ):(
+        <>
+          <div style={{margin:'12px 12px 0',background:'#eff6ff',borderRadius:12,padding:'10px 14px'}}>
+            {remaining>0?<div style={{fontSize:12,fontWeight:600,color:'#1a56db',marginBottom:6}}>Add <span style={{fontWeight:800}}>₱{remaining}</span> more for Free Shipping 🚀</div>:<div style={{fontSize:12,fontWeight:700,color:'#16a34a',marginBottom:6}}>🎉 You've unlocked Free Shipping!</div>}
+            <div style={{background:'#dbeafe',borderRadius:99,height:6,overflow:'hidden'}}>
+              <div style={{width:`${progress}%`,height:'100%',background:'linear-gradient(90deg,#1a56db,#0ea5e9)',borderRadius:99,transition:'width 0.4s'}}/>
+            </div>
+          </div>
+          <div style={{padding:'12px 12px 0'}}>
+            {cartItems.map(item=>(
+              <div key={item.key} style={{background:'#fff',borderRadius:14,padding:'12px',marginBottom:10,boxShadow:'0 2px 8px rgba(0,0,0,0.06)',display:'flex',gap:10,alignItems:'flex-start'}}>
+                <input type="checkbox" checked={item.checked} onChange={()=>toggleCheck(item.key)} style={{marginTop:4,accentColor:'#1a56db',width:16,height:16,flexShrink:0}}/>
+                <img src={item.image} alt={item.name} style={{width:72,height:72,borderRadius:10,objectFit:'cover',flexShrink:0}}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:13,fontWeight:600,color:'#111',marginBottom:2,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.name}</div>
+                  {(item.color||item.size)&&<div style={{fontSize:11,color:'#9ca3af',marginBottom:4}}>{item.color}{item.color&&item.size?' · ':''}{item.size}</div>}
+                  <div style={{fontSize:16,fontWeight:800,color:'#1a56db',marginBottom:6}}>₱{item.price}</div>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                    <div style={{display:'flex',alignItems:'center',border:'1.5px solid #e5e7eb',borderRadius:8,overflow:'hidden'}}>
+                      <button onClick={()=>updateQty(item.key,-1)} style={{width:28,height:28,border:'none',background:'#f9fafb',cursor:'pointer',fontWeight:700,fontSize:16}}>−</button>
+                      <span style={{width:32,textAlign:'center',fontSize:13,fontWeight:700}}>{item.qty}</span>
+                      <button onClick={()=>updateQty(item.key,1)} style={{width:28,height:28,border:'none',background:'#f9fafb',cursor:'pointer',fontWeight:700,fontSize:16}}>+</button>
+                    </div>
+                    <button onClick={()=>removeItem(item.key)} style={{background:'none',border:'none',color:'#ef4444',fontSize:12,fontWeight:600,cursor:'pointer'}}>Remove</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {totalSaved>0&&<div style={{margin:'0 12px 10px',background:'#eff6ff',borderRadius:12,padding:'10px 14px',display:'flex',alignItems:'center',gap:8}}><span style={{fontSize:18}}>🎉</span><span style={{fontSize:13,fontWeight:700,color:'#38bdf8'}}>You saved <span style={{color:'#1a56db'}}>₱{totalSaved.toLocaleString()}</span> on this order!</span></div>}
+          <div style={{margin:'0 12px',background:'#fff',borderRadius:14,padding:'14px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+            <div style={{fontWeight:700,fontSize:14,color:'#111',marginBottom:10}}>Order Summary</div>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}><span style={{fontSize:13,color:'#6b7280'}}>Subtotal ({checkedItems.length} items)</span><span style={{fontSize:13,fontWeight:600,color:'#111'}}>₱{subtotal.toLocaleString()}</span></div>
+            <div style={{display:'flex',justifyContent:'space-between',marginBottom:10}}><span style={{fontSize:13,color:'#6b7280'}}>Shipping</span><span style={{fontSize:13,fontWeight:700,color:'#16a34a'}}>FREE</span></div>
+            <div style={{borderTop:'1px solid #f3f4f6',paddingTop:10,display:'flex',justifyContent:'space-between'}}>
+              <span style={{fontSize:15,fontWeight:800,color:'#111'}}>Total</span>
+              <span style={{fontSize:18,fontWeight:900,color:'#1a56db'}}>₱{total.toLocaleString()}</span>
+            </div>
+          </div>
+          <div style={{position:'fixed',bottom:0,width:375,background:'#fff',padding:'12px 16px',borderTop:'1px solid #f3f4f6',boxShadow:'0 -4px 16px rgba(0,0,0,0.08)'}}>
+            <button onClick={()=>setScreen('address')} disabled={checkedItems.length===0} style={{width:'100%',padding:'15px',borderRadius:12,border:'none',background:checkedItems.length===0?'#e5e7eb':'linear-gradient(90deg,#1a56db,#0ea5e9)',color:checkedItems.length===0?'#9ca3af':'#fff',fontSize:16,fontWeight:800,cursor:checkedItems.length===0?'not-allowed':'pointer',boxShadow:checkedItems.length>0?'0 4px 14px rgba(26,86,219,0.35)':'none'}}>
+              CHECKOUT · ₱{total.toLocaleString()}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ── ADDRESS ────────────────────────────────────────────────
+function Address({setScreen}) {
+  const [selected,setSelected]=React.useState(savedAddresses[0].id);
+  const [showForm,setShowForm]=React.useState(false);
+  const [form,setForm]=React.useState({fullName:'',phone:'',line:'',city:'',zip:'',region:''});
+  const selAddr=savedAddresses.find(a=>a.id===selected);
+  return (
+    <div style={{paddingBottom:90}}>
+      <div style={{background:'linear-gradient(135deg,#1a56db,#0ea5e9)',padding:'16px 16px 18px',display:'flex',alignItems:'center',gap:12}}>
+        <button onClick={()=>setScreen('cart')} style={{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:10,width:36,height:36,cursor:'pointer',fontSize:18,color:'#fff'}}>←</button>
+        <span style={{fontWeight:800,fontSize:17,color:'#fff'}}>Delivery Address</span>
+      </div>
+      <div style={{padding:'16px 16px 0'}}>
+        <div style={{fontWeight:700,fontSize:14,color:'#374151',marginBottom:12}}>Saved Addresses</div>
+        {savedAddresses.map(addr=>(
+          <div key={addr.id} onClick={()=>setSelected(addr.id)} style={{background:'#fff',borderRadius:14,padding:'14px',marginBottom:10,border:`2px solid ${selected===addr.id?'#1a56db':'#e5e7eb'}`,cursor:'pointer',boxShadow:'0 2px 8px rgba(0,0,0,0.05)'}}>
+            <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+              <div style={{width:20,height:20,borderRadius:99,border:`2px solid ${selected===addr.id?'#1a56db':'#d1d5db'}`,background:selected===addr.id?'#1a56db':'#fff',flexShrink:0,marginTop:2,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {selected===addr.id&&<div style={{width:8,height:8,borderRadius:99,background:'#fff'}}/>}
+              </div>
+              <div>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
+                  <span style={{fontWeight:700,fontSize:14,color:'#111'}}>{addr.fullName}</span>
+                  <span style={{background:'#eff6ff',color:'#1a56db',fontSize:11,fontWeight:700,padding:'2px 8px',borderRadius:6}}>{addr.name}</span>
+                </div>
+                <div style={{fontSize:12,color:'#6b7280',lineHeight:1.6}}>{addr.phone}<br/>{addr.line}, {addr.city}, {addr.zip}<br/>{addr.region}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+        <button onClick={()=>setShowForm(!showForm)} style={{width:'100%',padding:'13px',borderRadius:12,border:'2px dashed #1a56db',background:'#eff6ff',color:'#1a56db',fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:16}}>+ Add New Address</button>
+        {showForm&&(
+          <div style={{background:'#fff',borderRadius:14,padding:16,boxShadow:'0 2px 8px rgba(0,0,0,0.06)',marginBottom:16}}>
+            {[{k:'fullName',l:'Full Name',p:'Your full name'},{k:'phone',l:'Phone Number',p:'+63 9XX XXX XXXX'},{k:'line',l:'Address Line',p:'Street, Barangay'},{k:'city',l:'City',p:'City'},{k:'zip',l:'ZIP Code',p:'0000'},{k:'region',l:'Region',p:'e.g. NCR'}].map(f=>(
+              <div key={f.k} style={{marginBottom:12}}>
+                <label style={{fontSize:12,fontWeight:600,color:'#374151',display:'block',marginBottom:4}}>{f.l}</label>
+                <input value={form[f.k]} onChange={e=>setForm(p=>({...p,[f.k]:e.target.value}))} placeholder={f.p} style={{width:'100%',padding:'11px 14px',borderRadius:10,border:'1.5px solid #e5e7eb',fontSize:14,outline:'none',fontFamily:'Inter,sans-serif'}}/>
+              </div>
+            ))}
+          </div>
+        )}
+        {selAddr&&(
+          <div style={{background:'#f0fdf4',borderRadius:12,padding:'12px 14px',marginBottom:16,display:'flex',gap:10,alignItems:'center'}}>
+            <span style={{fontSize:22}}>📦</span>
+            <div>
+              <div style={{fontSize:12,fontWeight:700,color:'#166534'}}>Estimated Delivery</div>
+              <div style={{fontSize:13,fontWeight:800,color:'#111'}}>April 8–10, 2026</div>
+              <div style={{fontSize:11,color:'#6b7280'}}>Delivering to {selAddr.city}</div>
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{position:'fixed',bottom:0,width:375,background:'#fff',padding:'12px 16px',borderTop:'1px solid #f3f4f6',boxShadow:'0 -4px 16px rgba(0,0,0,0.08)'}}>
+        <button onClick={()=>setScreen('payment')} style={{width:'100%',padding:'15px',borderRadius:12,border:'none',background:'linear-gradient(90deg,#1a56db,#0ea5e9)',color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',boxShadow:'0 4px 14px rgba(26,86,219,0.35)'}}>CONTINUE</button>
+      </div>
+    </div>
+  );
+}
+
+// ── PAYMENT ────────────────────────────────────────────────
+function Payment({setScreen}) {
+  const {subtotal,setOrder,cartItems}=useCart();
+  const [method,setMethod]=React.useState('card');
+  const [voucher,setVoucher]=React.useState('');
+  const [voucherApplied,setVoucherApplied]=React.useState(false);
+  const [useCredits,setUseCredits]=React.useState(false);
+  const skyroCredits=250;
+  const discount=voucherApplied?100:0;
+  const creditsUsed=useCredits?Math.min(skyroCredits,subtotal):0;
+  const total=Math.max(0,subtotal-discount-creditsUsed);
+  const payMethods=[{id:'card',label:'Credit / Debit Card',icon:'💳'},{id:'gcash',label:'GCash',icon:'📱'},{id:'paypal',label:'PayPal',icon:'🅿️'},{id:'cod',label:'Cash on Delivery',icon:'💵'}];
+  const handlePlace=()=>{
+    setOrder({id:'SKY-'+Math.random().toString(36).substr(2,8).toUpperCase(),date:'April 5, 2026',items:cartItems.filter(i=>i.checked),total,method,status:'placed'});
+    setScreen('tracking');
+  };
+  return (
+    <div style={{paddingBottom:90}}>
+      <div style={{background:'linear-gradient(135deg,#1a56db,#0ea5e9)',padding:'16px 16px 18px',display:'flex',alignItems:'center',gap:12}}>
+        <button onClick={()=>setScreen('address')} style={{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:10,width:36,height:36,cursor:'pointer',fontSize:18,color:'#fff'}}>←</button>
+        <span style={{fontWeight:800,fontSize:17,color:'#fff'}}>Payment</span>
+      </div>
+      <div style={{padding:'16px 16px 0'}}>
+        <div style={{fontWeight:700,fontSize:14,color:'#374151',marginBottom:12}}>Payment Method</div>
+        {payMethods.map(pm=>(
+          <div key={pm.id} onClick={()=>setMethod(pm.id)} style={{background:'#fff',borderRadius:12,padding:'13px 14px',marginBottom:8,border:`2px solid ${method===pm.id?'#1a56db':'#e5e7eb'}`,cursor:'pointer',display:'flex',alignItems:'center',gap:12}}>
+            <div style={{width:20,height:20,borderRadius:99,border:`2px solid ${method===pm.id?'#1a56db':'#d1d5db'}`,background:method===pm.id?'#1a56db':'#fff',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+              {method===pm.id&&<div style={{width:8,height:8,borderRadius:99,background:'#fff'}}/>}
+            </div>
+            <span style={{fontSize:20}}>{pm.icon}</span>
+            <span style={{fontSize:14,fontWeight:600,color:'#111'}}>{pm.label}</span>
+          </div>
+        ))}
+        <div style={{fontWeight:700,fontSize:14,color:'#374151',margin:'16px 0 10px'}}>Promo Code / Voucher</div>
+        <div style={{display:'flex',gap:8,marginBottom:8}}>
+          <input value={voucher} onChange={e=>setVoucher(e.target.value)} placeholder="Enter voucher code" style={{flex:1,padding:'11px 14px',borderRadius:10,border:'1.5px solid #e5e7eb',fontSize:14,outline:'none',fontFamily:'Inter,sans-serif'}}/>
+          <button onClick={()=>voucher&&setVoucherApplied(true)} style={{padding:'11px 16px',borderRadius:10,border:'none',background:'#1a56db',color:'#fff',fontSize:13,fontWeight:700,cursor:'pointer'}}>Apply</button>
+        </div>
+        {voucherApplied&&<div style={{background:'#f0fdf4',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13,fontWeight:600,color:'#16a34a'}}>✅ Voucher applied! You saved ₱100</div>}
+        <div style={{background:'#eff6ff',borderRadius:12,padding:'12px 14px',marginBottom:16,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div><div style={{fontSize:13,fontWeight:700,color:'#1a56db'}}>✨ Skyro Credits</div><div style={{fontSize:12,color:'#6b7280'}}>Balance: ₱{skyroCredits}</div></div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:12,fontWeight:600,color:'#374151'}}>Use credits</span>
+            <div onClick={()=>setUseCredits(u=>!u)} style={{width:40,height:22,borderRadius:99,background:useCredits?'#1a56db':'#d1d5db',position:'relative',cursor:'pointer',transition:'background 0.2s'}}>
+              <div style={{position:'absolute',top:3,left:useCredits?20:3,width:16,height:16,borderRadius:99,background:'#fff',transition:'left 0.2s',boxShadow:'0 1px 4px rgba(0,0,0,0.2)'}}/>
+            </div>
+          </div>
+        </div>
+        <div style={{background:'#fff',borderRadius:14,padding:'14px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)',marginBottom:16}}>
+          <div style={{fontWeight:700,fontSize:14,color:'#111',marginBottom:12}}>Order Summary</div>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}><span style={{fontSize:13,color:'#6b7280'}}>Subtotal</span><span style={{fontSize:13,fontWeight:600}}>₱{subtotal.toLocaleString()}</span></div>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}><span style={{fontSize:13,color:'#6b7280'}}>Shipping</span><span style={{fontSize:13,fontWeight:700,color:'#16a34a'}}>FREE</span></div>
+          {discount>0&&<div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}><span style={{fontSize:13,color:'#6b7280'}}>Voucher</span><span style={{fontSize:13,fontWeight:700,color:'#ef4444'}}>-₱{discount}</span></div>}
+          {creditsUsed>0&&<div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}><span style={{fontSize:13,color:'#6b7280'}}>Skyro Credits</span><span style={{fontSize:13,fontWeight:700,color:'#38bdf8'}}>-₱{creditsUsed}</span></div>}
+          <div style={{borderTop:'1px solid #f3f4f6',paddingTop:10,display:'flex',justifyContent:'space-between'}}>
+            <span style={{fontSize:15,fontWeight:800,color:'#111'}}>Total</span>
+            <span style={{fontSize:20,fontWeight:900,color:'#1a56db'}}>₱{total.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+      <div style={{position:'fixed',bottom:0,width:375,background:'#fff',padding:'12px 16px',borderTop:'1px solid #f3f4f6',boxShadow:'0 -4px 16px rgba(0,0,0,0.08)'}}>
+        <button onClick={handlePlace} style={{width:'100%',padding:'15px',borderRadius:12,border:'none',background:'linear-gradient(90deg,#1a56db,#0ea5e9)',color:'#fff',fontSize:16,fontWeight:800,cursor:'pointer',boxShadow:'0 4px 14px rgba(26,86,219,0.35)'}}>PLACE ORDER · ₱{total.toLocaleString()}</button>
+      </div>
+    </div>
+  );
+}
+
+// ── ORDER TRACKING ─────────────────────────────────────────
+function OrderTracking({setScreen}) {
+  const {order}=useCart();
+  const orderId=order?.id||'SKY-DEMO001';
+  const orderDate=order?.date||'April 5, 2026';
+  const items=order?.items||[];
+  const ACTIVE=2;
+  const steps=[
+    {label:'Order Placed',icon:'📋',desc:'April 5, 2026 · 10:42 AM'},
+    {label:'Payment Confirmed',icon:'✅',desc:'April 5, 2026 · 10:43 AM'},
+    {label:'Processing',icon:'📦',desc:'April 5, 2026 · 11:00 AM'},
+    {label:'Shipped',icon:'🚚',desc:'Expected: April 6, 2026'},
+    {label:'Out for Delivery',icon:'🛵',desc:'Expected: April 8, 2026'},
+    {label:'Delivered',icon:'🎉',desc:'Expected: April 8–10, 2026'},
+  ];
+  return (
+    <div style={{paddingBottom:90}}>
+      <div style={{background:'linear-gradient(135deg,#1a56db,#0ea5e9)',padding:'16px 16px 24px'}}>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+          <button onClick={()=>setScreen('home')} style={{background:'rgba(255,255,255,0.2)',border:'none',borderRadius:10,width:36,height:36,cursor:'pointer',fontSize:18,color:'#fff'}}>←</button>
+          <span style={{fontWeight:800,fontSize:17,color:'#fff'}}>Order Tracking</span>
+        </div>
+        <div style={{background:'rgba(255,255,255,0.15)',borderRadius:14,padding:'14px 16px',textAlign:'center'}}>
+          <div style={{fontSize:12,color:'#bfdbfe',marginBottom:4}}>Order Number</div>
+          <div style={{fontSize:18,fontWeight:900,color:'#fff',letterSpacing:1}}>{orderId}</div>
+          <div style={{fontSize:12,color:'#bfdbfe',marginTop:4}}>Placed on {orderDate}</div>
+        </div>
+      </div>
+      <div style={{margin:'16px 16px 0',background:'#eff6ff',borderRadius:14,padding:'14px 16px',textAlign:'center',border:'2px solid #bfdbfe'}}>
+        <div style={{fontSize:12,color:'#6b7280',marginBottom:4}}>Estimated Delivery</div>
+        <div style={{fontSize:22,fontWeight:900,color:'#1a56db'}}>April 8–10, 2026</div>
+        <div style={{fontSize:12,color:'#6b7280',marginTop:2}}>📍 Quezon City, NCR</div>
+      </div>
+      <div style={{margin:'12px 16px 0',background:'#fff',borderRadius:12,padding:'12px 14px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div><div style={{fontSize:12,color:'#6b7280'}}>Carrier</div><div style={{fontSize:14,fontWeight:700,color:'#111'}}>Skyro Express</div></div>
+        <div style={{textAlign:'right'}}><div style={{fontSize:12,color:'#6b7280'}}>Tracking No.</div><div style={{fontSize:13,fontWeight:700,color:'#1a56db'}}>SKYEXP-{orderId.replace('SKY-','')}</div></div>
+      </div>
+      <div style={{margin:'16px 16px 0',background:'#fff',borderRadius:14,padding:'16px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+        <div style={{fontWeight:700,fontSize:14,color:'#111',marginBottom:16}}>Shipment Status</div>
+        {steps.map((step,i)=>{
+          const isDone=i<=ACTIVE; const isActive=i===ACTIVE;
+          return (
+            <div key={i} style={{display:'flex',gap:14,position:'relative'}}>
+              {i<steps.length-1&&<div style={{position:'absolute',left:17,top:36,width:2,height:40,background:i<ACTIVE?'#1a56db':'#e5e7eb',zIndex:0}}/>}
+              <div style={{width:36,height:36,borderRadius:99,flexShrink:0,zIndex:1,background:isActive?'#1a56db':isDone?'#dbeafe':'#f3f4f6',border:`2px solid ${isDone?'#1a56db':'#e5e7eb'}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,boxShadow:isActive?'0 0 0 4px rgba(26,86,219,0.15)':'none'}}>{step.icon}</div>
+              <div style={{paddingBottom:24}}>
+                <div style={{fontSize:13,fontWeight:isActive?800:600,color:isDone?'#111':'#9ca3af'}}>{step.label}</div>
+                <div style={{fontSize:11,color:isActive?'#1a56db':'#9ca3af',fontWeight:isActive?600:400}}>{step.desc}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {items.length>0&&(
+        <div style={{margin:'12px 16px 0',background:'#fff',borderRadius:14,padding:'14px',boxShadow:'0 2px 8px rgba(0,0,0,0.06)'}}>
+          <div style={{fontWeight:700,fontSize:14,color:'#111',marginBottom:10}}>Items in this Order</div>
+          {items.map(item=>(
+            <div key={item.key} style={{display:'flex',gap:10,alignItems:'center',marginBottom:10}}>
+              <img src={item.image} alt={item.name} style={{width:52,height:52,borderRadius:10,objectFit:'cover'}}/>
+              <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:'#111'}}>{item.name}</div><div style={{fontSize:11,color:'#9ca3af'}}>Qty: {item.qty}{item.color?` · ${item.color}`:''}</div></div>
+              <div style={{fontSize:14,fontWeight:800,color:'#1a56db'}}>₱{(item.price*item.qty).toLocaleString()}</div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{margin:'12px 16px 0',display:'flex',gap:10}}>
+        <button style={{flex:1,padding:'13px',borderRadius:12,border:'2px solid #1a56db',background:'#fff',color:'#1a56db',fontSize:13,fontWeight:700,cursor:'pointer'}}>💬 Contact Seller</button>
+        <button style={{flex:1,padding:'13px',borderRadius:12,border:'2px solid #e5e7eb',background:'#fff',color:'#374151',fontSize:13,fontWeight:700,cursor:'pointer'}}>↩️ Request Return</button>
+      </div>
+      <div style={{margin:'16px 16px 0',textAlign:'center',paddingBottom:24}}>
+        <button onClick={()=>setScreen('home')} style={{padding:'13px 32px',borderRadius:12,border:'none',background:'linear-gradient(90deg,#1a56db,#0ea5e9)',color:'#fff',fontSize:14,fontWeight:700,cursor:'pointer',boxShadow:'0 4px 14px rgba(26,86,219,0.3)'}}>Continue Shopping ✈️</button>
+      </div>
+    </div>
+  );
+}
+
+// ── APP ────────────────────────────────────────────────────
+const SCREENS_WITH_NAV=['home','categories','cart','messages','profile'];
+function App() {
+  const [screen,setScreen]=React.useState('signin');
+  const [selectedProduct,setSelectedProduct]=React.useState(null);
+  const renderScreen=()=>{
+    switch(screen){
+      case 'signin': return <SignIn setScreen={setScreen}/>;
+      case 'home': return <Home setScreen={setScreen} setSelectedProduct={setSelectedProduct}/>;
+      case 'product': return selectedProduct?<ProductDetail product={selectedProduct} setScreen={setScreen}/>:null;
+      case 'cart': return <Cart setScreen={setScreen}/>;
+      case 'address': return <Address setScreen={setScreen}/>;
+      case 'payment': return <Payment setScreen={setScreen}/>;
+      case 'tracking': return <OrderTracking setScreen={setScreen}/>;
+      case 'categories':
+      case 'messages':
+      case 'profile':
+        return (
+          <div style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',height:'80vh',gap:12}}>
+            <div style={{fontSize:60}}>{screen==='categories'?'☰':screen==='messages'?'💬':'👤'}</div>
+            <div style={{fontSize:18,fontWeight:700,color:'#111',textTransform:'capitalize'}}>{screen}</div>
+            <div style={{fontSize:14,color:'#9ca3af'}}>Coming soon on Skyro ✈️</div>
+          </div>
+        );
+      default: return null;
+    }
+  };
+  return (
+    <CartProvider>
+      <div style={{minHeight:'100vh',background:'#f8fafc'}}>
+        {renderScreen()}
+        {SCREENS_WITH_NAV.includes(screen)&&<BottomNav screen={screen} setScreen={setScreen}/>}
+      </div>
+    </CartProvider>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
